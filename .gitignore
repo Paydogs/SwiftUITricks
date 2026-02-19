@@ -1,0 +1,16 @@
+.DS_Store
+.DerivedData
+.build/
+build/
+*.pbxuser
+!default.pbxuser
+xcuserdata/
+DerivedData
+*.hmap
+*.ipa
+.*.swp
+.*.swo
+*.xcodeproj
+*.xcworkspace
+*.xcworkspacedata
+Derived/

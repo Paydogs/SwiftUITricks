@@ -1,0 +1,12 @@
+/* 
+  Localizable.strings
+  SwiftUITricks
+
+  Created by Andras Olah on 2026. 02. 19..
+  
+*/
+
+"app_name" = "SwiftUI Trükkök";
+
+"language_code_en" = "Angol";
+"language_code_hu" = "Magyar";
