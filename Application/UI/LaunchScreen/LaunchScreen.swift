@@ -46,10 +46,12 @@ fileprivate struct LaunchScreenModifier<Logo: View>: ViewModifier {
                     window.backgroundColor = .clear
                     window.isHidden = false
                     window.isUserInteractionEnabled = true
-                    let rootViewController = UIHostingController(rootView: LaunchScreenView(config: config) { logo }
-                                                                 isCompleted: {
-                        window.isHidden = true
-                    }
+                    let rootViewController = UIHostingController(
+                        rootView: LaunchScreenView(config: config) { logo }
+                        isCompleted: {
+                            window.isHidden = true
+                            self.splashWindow = nil
+                        }
                     )
                     window.rootViewController = rootViewController
                     rootViewController.view.backgroundColor = .clear
@@ -73,7 +75,7 @@ fileprivate struct LaunchScreenModifier<Logo: View>: ViewModifier {
 struct LaunchScreenConfig {
     var initialDelay: Double = 0.1
     var backgroundColor: Color = Color(red: 137/255, green: 207/255, blue: 240/255)
-    var scaling: CGFloat = 10
+    var scaling: CGFloat = 20
     var animationDuration: CGFloat = 1
 }
 
@@ -84,19 +86,14 @@ fileprivate struct LaunchScreenView<Logo: View>: View {
     
     @State private var startAnimation = false
     @State private var contentOpacity = 1.0
-
+    
     var body: some View {
         ZStack {
-            // The solid background that will disappear
             Rectangle()
                 .fill(config.backgroundColor)
-                .ignoresSafeArea()
-                // This mask is the secret sauce
                 .mask(
                     ZStack {
-                        // A full screen rectangle...
                         Rectangle()
-                        // ...minus the logo (Destination Out style)
                         logo
                             .scaleEffect(startAnimation ? config.scaling : 1.0)
                             .frame(width: 100, height: 100)
@@ -104,8 +101,9 @@ fileprivate struct LaunchScreenView<Logo: View>: View {
                     }
                 )
         }
-        .compositingGroup() // Required for the blendMode to work
+        .compositingGroup()
         .opacity(contentOpacity)
+        .ignoresSafeArea()
         .task {
             try? await Task.sleep(for: Duration.seconds(config.initialDelay))
             withAnimation(.spring(response: config.animationDuration, dampingFraction: 0.8)) {
