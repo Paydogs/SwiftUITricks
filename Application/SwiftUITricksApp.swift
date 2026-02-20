@@ -17,6 +17,8 @@ struct SwiftUITricksApp: App {
             Image(.launchScreenLogo)
         } rootContent: {
             RootView()
+        } loadingTask: {
+            try? await DummyLoadingTask.load(for: 2)
         }
 
 

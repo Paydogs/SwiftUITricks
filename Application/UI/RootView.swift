@@ -12,15 +12,64 @@ struct RootView: View {
     
     var body: some View {
         NavigationStack(path: $path) {
-            ButtonList(items: ApplicationScreen.allCases) { selected in
-                path.append(selected)
+            VStack {
+                ButtonList(items: ApplicationScreen.allCases) { selected in
+                    path.append(selected)
+                }
+                .buttonListRowBackground {
+                    SpecialButtonListBackground()
+                }
+                .navigationDestination(for: ApplicationScreen.self) { destination in
+                    destination.destination
+                }
+                .frame(height: 100)
+                
+                ButtonList(items: DummyList.allCases) { selected in
+                    
+                }
             }
-            .buttonListRowBackground {
-                SpecialButtonListBackground()
-            }
-            .navigationDestination(for: ApplicationScreen.self) { destination in
-                destination.destination
-            }
+        }
+    }
+}
+
+enum DummyList: Hashable, Identifiable, CaseIterable {
+    case first
+    case second
+    case third
+    case fourth
+    case fifth
+    case sixth
+    case seventh
+    case eighth
+    case ninth
+    case tenth
+    
+    var id: Self { self }
+}
+
+extension DummyList: ListDisplayable {
+    func localizedTitle() -> String {
+        switch self {
+        case .first:
+            "First"
+        case .second:
+            "Second"
+        case .third:
+            "Third"
+        case .fourth:
+            "Fourth"
+        case .fifth:
+            "Fifth"
+        case .sixth:
+            "Sixth"
+        case .seventh:
+            "Seventh"
+        case .eighth:
+            "Eighth"
+        case .ninth:
+            "Ninth"
+        case .tenth:
+            "Tenth"
         }
     }
 }

@@ -12,19 +12,22 @@ struct LaunchScreen<RootView: View, Logo: View>: Scene {
     
     @ViewBuilder var logoContent: () -> Logo
     @ViewBuilder var rootContent: RootView
+    var loadingTask: (() async -> Void)?
     
     var body: some Scene {
         WindowGroup {
             rootContent
-                .modifier(LaunchScreenModifier(config: config, logo: logoContent))
+                .modifier(LaunchScreenModifier(config: config, loadingTask: loadingTask, logo: logoContent))
         }
     }
 }
 
 fileprivate struct LaunchScreenModifier<Logo: View>: ViewModifier {
     var config: LaunchScreenConfig
-    
+    var loadingTask: (() async -> Void)?
     @ViewBuilder var logo: Logo
+    
+    // MARK: Private properties
     @Environment(\.scenePhase) private var scenePhase
     @State private var splashWindow: UIWindow?
     
@@ -42,19 +45,17 @@ fileprivate struct LaunchScreenModifier<Logo: View>: ViewModifier {
                         continue
                     }
                     
-                    let window = UIWindow(windowScene: windowScene)
-                    window.backgroundColor = .clear
-                    window.isHidden = false
-                    window.isUserInteractionEnabled = true
-                    let rootViewController = UIHostingController(
-                        rootView: LaunchScreenView(config: config) { logo }
-                        isCompleted: {
-                            window.isHidden = true
-                            self.splashWindow = nil
-                        }
-                    )
-                    window.rootViewController = rootViewController
-                    rootViewController.view.backgroundColor = .clear
+                    let window = makeSplashWindow(with: windowScene)
+                    
+                    let loadingView = LaunchScreenView(config: config, loadingTask: loadingTask) { logo }
+                    isCompleted: {
+                        window.isHidden = true
+                        self.splashWindow = nil
+                    }
+                    
+                    let animationRootViewController = UIHostingController(rootView: loadingView)
+                    animationRootViewController.view.backgroundColor = .clear
+                    window.rootViewController = animationRootViewController
                     
                     self.splashWindow = window
                     print("SplashWindow added")
@@ -70,17 +71,21 @@ fileprivate struct LaunchScreenModifier<Logo: View>: ViewModifier {
         default: return state.hashValue == scenePhase.hashValue
         }
     }
-}
-
-struct LaunchScreenConfig {
-    var initialDelay: Double = 0.1
-    var backgroundColor: Color = Color(red: 137/255, green: 207/255, blue: 240/255)
-    var scaling: CGFloat = 20
-    var animationDuration: CGFloat = 1
+    
+    private func makeSplashWindow(with windowScene: UIWindowScene) -> UIWindow {
+        let window = UIWindow(windowScene: windowScene)
+        window.backgroundColor = .clear
+        window.isHidden = false
+        window.isUserInteractionEnabled = false
+        window.windowLevel = .normal + 1
+        
+        return window
+    }
 }
 
 fileprivate struct LaunchScreenView<Logo: View>: View {
     var config: LaunchScreenConfig
+    var loadingTask: (() async -> Void)?
     @ViewBuilder var logo: Logo
     var isCompleted: () -> Void
     
@@ -100,22 +105,35 @@ fileprivate struct LaunchScreenView<Logo: View>: View {
                             .blendMode(.destinationOut)
                     }
                 )
+            
+            logo
+                .frame(width: 100, height: 100)
+                .opacity(startAnimation ? 0 : 1)
+                .animation(nil, value: startAnimation)
         }
         .compositingGroup()
         .opacity(contentOpacity)
         .ignoresSafeArea()
         .task {
-            try? await Task.sleep(for: Duration.seconds(config.initialDelay))
-            withAnimation(.spring(response: config.animationDuration, dampingFraction: 0.8)) {
-                startAnimation = true
-            }
-            try? await Task.sleep(for: Duration.seconds(config.animationDuration * 0.8))
-            withAnimation(.easeIn(duration: 0.2)) {
-                contentOpacity = 0
+            if let loadingTask = loadingTask {
+                await loadingTask()
+            } else {
+                try? await Task.sleep(for: Duration.seconds(config.initialDelay))
             }
             
-            try? await Task.sleep(for: Duration.seconds(0.2))
-            isCompleted()
+            await animate()
         }
+    }
+    
+    private func animate() async {
+        withAnimation(.easeIn(duration: config.animationDuration)) {
+            startAnimation = true
+        }
+        try? await Task.sleep(for: .seconds(config.animationDuration * 0.5))
+        withAnimation(.easeIn(duration: config.animationDuration * 0.5)) {
+            contentOpacity = 0
+        }
+        try? await Task.sleep(for: .seconds(config.animationDuration * 0.5))
+        isCompleted()
     }
 }

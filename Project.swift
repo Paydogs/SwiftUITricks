@@ -19,7 +19,13 @@ let defaultApp = Target.target(
         .glob("Application/**/*.swift", excluding: ["Application/Tests/**"])
     ],
     resources: ["Application/Resources/**"],
-    dependencies: []
+    dependencies: [],
+    settings: .settings(
+        base: [
+            "CODE_SIGN_STYLE": "Automatic",
+            "DEVELOPMENT_TEAM": "64GU57DP44",
+        ]
+    )
 )
 
 let project = Project(
